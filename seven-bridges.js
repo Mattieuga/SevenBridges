@@ -480,6 +480,7 @@ function Graph(canvas)
 {
 	// When true, the canvas will redraw the graph
 	this.valid = false;
+	this.graphType = "arbitrary";
 	//this.animating = false;
 
 	// Canvas properties
@@ -632,6 +633,10 @@ Graph.prototype.reset = function() {
 	Node.node_id = 0;
 }
 
+Graph.prototype.isComplete = function() {
+	return this.graphType=="complete";
+}
+
 
 // ****************************************************
 //  Generation API Methods
@@ -640,6 +645,9 @@ Graph.prototype.reset = function() {
 function generateArbitraryGraph(graph, canvas, n, density) {
 	// Clear canvas	
 	//var graph = new Graph(canvas);
+	if (density == 1) graph.graphType = "complete";
+	if (density == 0) graph.graphType = "line";
+	
 	var canvasRadius;
 	var canvasHeight = canvas.height;
 	var canvasWidth = canvas.width-250;

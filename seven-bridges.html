@@ -3,7 +3,7 @@
 <head>
 	<script src="seven-bridges.js"></script>
 	<script src="js/jquery-1.7.2.min.js"></script>
-	<script type="text/javascript" src="js/dat.gui.min.js"></script>
+	<script type="text/javascript" src="js/dat.gui.js"></script>
 	<script type="text/javascript">
 		// Constants
 		const INIT_NODE = 10;
@@ -14,11 +14,6 @@
 		var graph = null;
 		var animator = null;
 		var controlData;
-		
-		// Current GUI values
-		var densitySliderVal = INIT_DENSITY;
-		var nodeSliderVal = INIT_NODE;
-		var speedSliderVal = INIT_SPEED;
 		
 		// Data object used to populate GUI
 		var GraphControls = function() 
@@ -38,11 +33,7 @@
 			}
 
 			this.TerritoryAcquisition = function () {
-			/*	if (controlData.Density != 1) {
-					controlData.Density = 1;
-					generateGraph();
-				}*/
-	            if (controlData.Density == 1) {
+	            if (graph.isComplete()) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
 					animator = new Animator(graph,controlData.Speed);
@@ -56,7 +47,6 @@
 				animator.stopAnimation();
 			}
 		};
-		
 		
 		
 		// Initialization method (onload)
@@ -91,8 +81,7 @@
 			generateGraph();
 			
 			
-			speedController.onChange(function(value){
-				//speedSliderVal = value;
+			speedController.onChange(function(value) {
 				controlData.Speed = value;
 				if (animator != null)
 					animator.setSpeedModifier(value);
@@ -117,15 +106,12 @@
 			
 			if (animator != null) {
 				animator.stopAnimation();
-				//animator = null;	
 				animator.reset();
 			}
 			
 			if (graph == null) graph = new Graph(canvas)
 			graph.reset();
-			generateArbitraryGraph(graph, canvas, controlData.Nodes, controlData.Density);
-			
-			// reset animator object
+			generateArbitraryGraph(graph, canvas, controlData.Nodes, controlData.Density);			
 		}
 	</script>
 </head>
@@ -159,7 +145,7 @@
 		  	width:  100%;
 		  	height: 100%;
 		  	margin: 0px;
-			background: white url(js/bright_squares.png);
+			background: white url(images/bright_squares.png);
 			color: #999;
 		}	
 		
