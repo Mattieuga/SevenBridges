@@ -1,6 +1,8 @@
 // ****************************************************
 //  ANIMATION
 // ****************************************************
+
+/* Message class, represents the message view */
 function Message(x,y,message,fill) {
 	this.x = x || 0;
 	this.y = y || 0;
@@ -19,11 +21,13 @@ Message.prototype.draw = function(ctx) {
 	ctx.fillText(""+this.message, this.x+8, this.y);
 }
 
+/* State class, each node has a state */
 function State(name, color) {
 	this.color = color;
 	this.name = name;
 }
 
+/* Animator class, manages the animation of the algorithms */
 function Animator(graph, speedSliderVal) {
 	this.graph = graph;
 	this.animating = false;
@@ -37,6 +41,7 @@ Animator.prototype.reset = function() {
 Animator.prototype.setSpeedModifier = function(speedVal) {
 	this.speedModifier = speedVal;
 }
+
 Animator.prototype.stopAnimation = function() {
 	this.animating = false;
 	if (graph != null) {
@@ -76,7 +81,9 @@ Animator.prototype.sendMessage = function(msg, adjNode, baseSpeed) {
 	}
 }
 
-// ALGORITHMS
+// ******************
+//    ALGORITHMS
+// ******************
 Animator.prototype.broadcast = function() {
 	var animator = this;
 	this.animating = true;
@@ -478,25 +485,26 @@ Node.prototype.setState = function(newState) {
 // ****************************************************
 function Graph(canvas) 
 {
-	// When true, the canvas will redraw the graph
-	this.valid = false;
-	this.graphType = "arbitrary";
-	//this.animating = false;
-
+	// Graph properties
+	this.valid = false; // When true, the graph will redraw
+	this.graphType = "arbitrary"; // Used to indicate type of graph (ex, complete, line, etc)
+	
+	this.nodes = []; // Nodes on the graph
+	this.messages = []; // Messages travelling on the graph
+	
+	// Used to allocate node ids. Reset to 0 when graph is re-generated
+	Node.node_id = 0;
+	
 	// Canvas properties
 	this.canvas = canvas;
  	this.width = canvas.width;
 	this.height = canvas.height;
 	this.ctx = canvas.getContext('2d');
-  
-	// Reset node ids for this graph
-	Node.node_id = 0;
-	
+
 	// Dragging data
 	this.dragging = false; // Keep track of when we are dragging
   	this.dragoffx = 0;
   	this.dragoffy = 0;
-
 	var html = document.body.parentNode;
 	this.htmlTop = html.offsetTop;
 	this.htmlLeft = html.offsetLeft;
@@ -509,11 +517,7 @@ function Graph(canvas)
 	    this.styleBorderTop   = parseInt(document.defaultView.getComputedStyle(canvas, null)['borderTopWidth'], 10)   || 0;
 	}
 	
-	// Nodes and messages on the graph
-	this.nodes = [];
-	this.messages = [];
-	var myGraph = this;
-	
+	// Mouse dragging event handlers
 	canvas.addEventListener('selectstart', function(e) { 
 		e.preventDefault(); return false; 
 	}, false);
@@ -559,45 +563,12 @@ function Graph(canvas)
 	}, true);
 					
 	// Drawing code
+	var myGraph = this;
 	this.interval = 30;
 	setInterval(function() {myGraph.draw();}, myGraph.interval);
 }
 
-Graph.prototype.draw = function() {
-	
-	
-	if (!this.valid) {
-		var ctx = this.ctx;
-
-		ctx.canvas.width  = window.innerWidth;
-		ctx.canvas.height = window.innerHeight;
-		
-		this.clear();
-		
-		for (var i = 0; i < this.nodes.length; i++) {
-			this.nodes[i].drawEdges(ctx);
-		}
-		for (var i = 0; i < this.nodes.length; i++) {
-			this.nodes[i].drawNode(ctx);
-		}
-		
-		for (var i = 0; i < this.messages.length; i++) {
-			this.messages[i].draw(ctx);
-		}
-		
-		this.valid = true;
-	}
-}
-
-Graph.prototype.addNode = function(node) {
-	this.nodes.push(node);
-	this.valid = false;
-}
-
-Graph.prototype.clear = function() {
-	this.ctx.clearRect(0, 0, this.width, this.height);
-}
-
+/* Get exact mouse position, used in mouse event handlers */
 Graph.prototype.getMouse = function(e) {
   var element = this.canvas, offsetX = 0, offsetY = 0, mx, my;
   
@@ -621,18 +592,59 @@ Graph.prototype.getMouse = function(e) {
   return {x: mx, y: my};
 }
 
+/* Drawing function for the graph. Also delegates the drawing of nodes, messages and edges */
+Graph.prototype.draw = function() {
+	if (!this.valid) {
+		var ctx = this.ctx;
+
+		ctx.canvas.width  = window.innerWidth;
+		ctx.canvas.height = window.innerHeight;
+		
+		this.clear();
+		
+		for (var i = 0; i < this.nodes.length; i++) {
+			this.nodes[i].drawEdges(ctx);
+		}
+		for (var i = 0; i < this.nodes.length; i++) {
+			this.nodes[i].drawNode(ctx);
+		}
+		
+		for (var i = 0; i < this.messages.length; i++) {
+			this.messages[i].draw(ctx);
+		}
+		
+		this.valid = true;
+	}
+}
+
+/* Add node to the graph */
+Graph.prototype.addNode = function(node) {
+	this.nodes.push(node);
+	this.valid = false;
+}
+
+/* Clear the graph (DEPRECATED) */
+Graph.prototype.clear = function() {
+	this.ctx.clearRect(0, 0, this.width, this.height);
+}
+
+/* Set all nodes to a given state. Used to reset graph to default. */
 Graph.prototype.setAllNodeStates = function(nodeState) {
 	for (var i = 0; i < this.nodes.length; i++) {
 		this.nodes[i].setState(nodeState);
 	}
 }
 
+/* Resets graph by removing all nodes and messages. Called before 
+   generating a new graph, this graph item is reused instead of 
+   deleting it and creating a new one. */
 Graph.prototype.reset = function() {
 	this.nodes = [];
 	this.messages = [];
 	Node.node_id = 0;
 }
 
+/* Check the graph's type to see if its a complete graph. */
 Graph.prototype.isComplete = function() {
 	return this.graphType=="complete";
 }
@@ -646,7 +658,8 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 	// Clear canvas	
 	//var graph = new Graph(canvas);
 	if (density == 1) graph.graphType = "complete";
-	if (density == 0) graph.graphType = "line";
+	else if (density == 0) graph.graphType = "line";
+	else graph.graphType = "arbitrary"
 	
 	var canvasRadius;
 	var canvasHeight = canvas.height;

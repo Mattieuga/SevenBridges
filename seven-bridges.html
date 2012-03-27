@@ -3,6 +3,8 @@
 <head>
 	<script src="seven-bridges.js"></script>
 	<script src="js/jquery-1.7.2.min.js"></script>
+	<script src="js/jquery-ui-1.8.18.custom.min.js"></script>
+	
 	<script type="text/javascript" src="js/dat.gui.js"></script>
 	<script type="text/javascript">
 		// Constants
@@ -39,7 +41,14 @@
 					animator = new Animator(graph,controlData.Speed);
 					animator.territoryAquisition();
 				} else {
+					$("span:contains('TerritoryAcquisition')").append($( "#alert" ));
 					
+					$( "#alert" ).show( "drop", {}, 500, callback);
+					function callback() {
+						setTimeout(function() {
+							$( "#alert:visible" ).removeAttr( "style" ).fadeOut();
+						}, 1000 );
+					};
 				}
 			}
 
@@ -65,7 +74,7 @@
 			
 			// Build GUI
 			var graphF = gui.addFolder('Graph');
-			nodeController = graphF.add(controlData, "Nodes",0,100);
+			nodeController = graphF.add(controlData, "Nodes",0,100).step(1);
 			densityController = graphF.add(controlData, "Density",0,1).listen(); // We listen to update when territory is chosen
 			graphF.add(controlData, "Generate");
 			graphF.open();
@@ -93,6 +102,7 @@
 					$('#info-inner').stop(false, true).slideToggle(100);
 					e.preventDefault();
 				});
+			$( "#alert" ).hide();
 		};
 		
 		
@@ -114,6 +124,7 @@
 			generateArbitraryGraph(graph, canvas, controlData.Nodes, controlData.Density);			
 		}
 	</script>
+	<title>SevenBridges Simulator</title>
 </head>
 
 <body>
@@ -128,11 +139,18 @@
 		<a href="#" id="info-toggle">Toggle Info</a>
 	</div>		
 	
+	<div id="alert">
+		<p>test</p>
+	</div>
 	<div id="canvasDiv">
 		<canvas id="canvas" width="450px" height="600px"></canvas>
 	</div>
 
 	<style type="text/css">
+		#alert {
+			visible:false;
+		}
+		
 		#canvas {
 			display: block;
 			left: 0;
