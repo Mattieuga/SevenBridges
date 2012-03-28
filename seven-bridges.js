@@ -178,7 +178,8 @@ Animator.prototype.territoryAquisition = function() {
 	this.animating = true;
 	
 	// Colors
-	const CAPTURED_LINK_COLOR = '#45A4E7';
+	const CAPTURED_LINK_COLOR = '#000000';
+	const DEFAULT_LINK_COLOR = '#888888'
 	const MESSAGE_COLOR = '#C93153';
 	const CAPTURED_NODE_COLOR = '#AEE0F3';
 	const PASSIVE_NODE_COLOR = '#AAAAAA';
@@ -197,6 +198,7 @@ Animator.prototype.territoryAquisition = function() {
 	var FOLLOWER = new State("passvive",FOLLOWER_NODE_COLOR);
 	
 	this.graph.setAllNodeStates(SLEEPING);
+	this.graph.setAllEdgesColorAndWidth(DEFAULT_LINK_COLOR,1);
 	
 	// Wakeup nodes
 	for (var i = 0; i < this.graph.nodes.length; i++) {
@@ -278,7 +280,7 @@ Animator.prototype.territoryAquisition = function() {
 					// set link colors
 					for (var i = 0; i < this.adjNodes.length; i++) {
 						if (this.adjEdges[i])
-							this.adjEdges[i].setColorAndWidth('#000',1);
+							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
 					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
 					
@@ -315,7 +317,7 @@ Animator.prototype.territoryAquisition = function() {
 				// set link colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
-						this.adjEdges[i].setColorAndWidth('#000',1);
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
@@ -325,7 +327,7 @@ Animator.prototype.territoryAquisition = function() {
 				// set link colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
-						this.adjEdges[i].setColorAndWidth('#000',1);
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
 			}
@@ -351,7 +353,7 @@ Animator.prototype.territoryAquisition = function() {
 					// set link colors
 					for (var i = 0; i < this.adjNodes.length; i++) {
 						if (this.adjEdges[i])
-							this.adjEdges[i].setColorAndWidth('#000',1);
+							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
 				}
 			}
@@ -383,7 +385,7 @@ Animator.prototype.territoryAquisition = function() {
 					// set link colors
 					for (var i = 0; i < this.adjNodes.length; i++) {
 						if (this.adjEdges[i])
-							this.adjEdges[i].setColorAndWidth('#000',1);
+							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
 					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
 				}
@@ -413,7 +415,7 @@ Animator.prototype.territoryAquisition = function() {
 				// set links colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
-						this.adjEdges[i].setColorAndWidth('#000',1);
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
 			}
@@ -466,7 +468,7 @@ Animator.prototype.territoryAquisition = function() {
 				// set link colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
-						this.adjEdges[i].setColorAndWidth('#000',1);
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
 			}
@@ -495,7 +497,7 @@ Animator.prototype.territoryAquisition = function() {
 				// set link colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
-						this.adjEdges[i].setColorAndWidth('#000',1);
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
 			}
@@ -788,7 +790,7 @@ Graph.prototype.setAllNodeStates = function(nodeState) {
 }
 
 /* Set all edges to a given color and width. */
-Graph.prototype.setAllEdgesColorAndWith = function(color, width) {
+Graph.prototype.setAllEdgesColorAndWidth = function(color, width) {
 	for (var i = 0; i < this.edges.length; i++) {
 		this.edges[i].setColorAndWidth(color,width);
 	}
@@ -797,7 +799,7 @@ Graph.prototype.setAllEdgesColorAndWith = function(color, width) {
 /* Set all nodes and edges to their default state. */
 Graph.prototype.reset = function() {
 	this.setAllNodeStates(new State("default",'#AAAAAA'));
-	this.setAllEdgesColorAndWith('#000',1);
+	this.setAllEdgesColorAndWidth('#000',1);
 }
 
 /* Clear graph by removing all nodes and messages. Called before 
