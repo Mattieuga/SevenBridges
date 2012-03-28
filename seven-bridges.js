@@ -17,7 +17,7 @@ Message.prototype.draw = function(ctx) {
 	
 	// Draw msg
 	ctx.font = "16pt Century Gothic";
-	ctx.fillStyle = "#000000"
+	ctx.fillStyle = '#000000'
 	ctx.fillText(""+this.message, this.x+8, this.y);
 }
 
@@ -46,7 +46,7 @@ Animator.prototype.stopAnimation = function() {
 	this.animating = false;
 	if (graph != null) {
 		this.graph.messages = [];
-		this.graph.setAllNodeStates(new State("default","#AAAAAA"));
+		this.graph.setAllNodeStates(new State("default",'#AAAAAA'));
 	}
 }
 
@@ -229,10 +229,13 @@ Animator.prototype.territoryAquisition = function() {
 					this.ownerstage = message.stage+1;
 					
 					this.setState(CAPTURED);
+					//this.edgeForAdjacentNode(message.sender).setColorAndWidth('#3C8EC8',2); // Set link color
+					
 				}
 			}
 			else if (message.message == 'accept') // Message 'accept'
-			{
+			{				
+				// Algorithm
 				this.stage++;
 				var n = this.adjNodes.length;
 				if (this.stage >= 1+(n/2)) {
@@ -284,7 +287,7 @@ Animator.prototype.territoryAquisition = function() {
 				}
 			}
 		} 
-		else if (this.state == PASSIVE) // State {PASSIVE
+		else if (this.state == PASSIVE) // State PASSIVE
 		{
 			if (message.message == 'capture') // Message 'capture'
 			{
@@ -366,6 +369,9 @@ Animator.prototype.territoryAquisition = function() {
 			}
 			else if (message.message == 'yes') // Message 'yes'
 			{
+				// Set link color
+				//this.edgeForAdjacentNode(message.sender).setColor("#0E6AC2");
+				
 				this.ownerstage = message.stage+1;
 				this.owner = this.attack;
 				
@@ -420,6 +426,7 @@ function Node(x,y,r,graph) {
 	
 	// Adjacency List
 	this.adjNodes = [];
+	this.adjEdges = [];
 	
 	// Graph
 	this.graph = graph;
@@ -428,7 +435,7 @@ function Node(x,y,r,graph) {
 	this.state = new State("default","#AAAAAA");
 }
 
-Node.prototype.drawNode = function(ctx) {	
+Node.prototype.draw = function(ctx) {	
 	// Draw node
 	ctx.beginPath();
 	ctx.arc(this.x, this.y, 15, 0, Math.PI*2, true); 
@@ -448,24 +455,10 @@ Node.prototype.drawNode = function(ctx) {
 	ctx.fillText(""+this.id,this.x-6,this.y+6);
 }
 
-Node.prototype.drawEdges = function(ctx) {
-	// Draw edges
-	for (var i = 0; i < this.adjNodes.length; i++) {
-		// Start with the math
-			//math
-		// Drawing
-		ctx.strokeStyle = "#000"
-		ctx.beginPath();
-		ctx.moveTo(this.x,this.y);
-		ctx.lineTo(this.adjNodes[i].x,this.adjNodes[i].y);
-		ctx.lineWidth = 1;
-		ctx.stroke();
-	}	
-}
-
-Node.prototype.link = function(node) {	
-	this.adjNodes.push(node);
-	node.adjNodes.push(this);
+/* Link two nodes with an edge by indorming them of their adjencency and their edge */
+Node.prototype.link = function(node, edge) {	
+	var index = this.adjNodes.push(node)-1; // Push adjacent node
+	this.adjEdges[index] = edge; // Push associated edge at same index
 }
 
 Node.prototype.contains = function(mx, my) {
@@ -480,8 +473,58 @@ Node.prototype.setState = function(newState) {
 	this.graph.valid = false;
 }
 
+Node.prototype.edgeForAdjacentNode = function(node) {
+	var index = -1;
+	for (var i = 0; i < this.adjNodes.length; i++) {
+		if (this.adjNodes[i] == node) {
+			index = i;
+		}
+	}
+	
+	if (index >= 0)
+		return this.adjEdges[index];
+	else
+		return null;
+}
+
 // ****************************************************
-//  Graph
+//  EDGE
+// ****************************************************
+function Edge(node1, node2, graph, strokeColor) {
+	// Location & Dimensions
+	this.node1 = node1;
+	this.node2 = node2;
+	this.graph = graph;
+	this.strokeColor = strokeColor; // defaults to black
+	this.strokeSize = 1;
+}
+
+Edge.prototype.draw = function(ctx) {
+	ctx.strokeStyle = this.strokeColor;
+	ctx.beginPath();
+	ctx.moveTo(this.node1.x,this.node1.y);
+	ctx.lineTo(this.node2.x,this.node2.y);
+	ctx.lineWidth = this.strokeSize;
+	ctx.stroke();
+}
+
+Edge.prototype.setColor = function(color) {
+	this.strokeColor = color;
+	this.graph.valid = false;
+}
+
+Edge.prototype.setWidth = function(width) {
+	this.strokeSize = width;
+	this.graph.valid = false;
+}
+
+Edge.prototype.setColorAndWidth = function (color, width) {
+	this.setColor(color);
+	this.setWidth(width);
+}
+
+// ****************************************************
+//  GRAPH
 // ****************************************************
 function Graph(canvas) 
 {
@@ -490,6 +533,7 @@ function Graph(canvas)
 	this.graphType = "arbitrary"; // Used to indicate type of graph (ex, complete, line, etc)
 	
 	this.nodes = []; // Nodes on the graph
+	this.edges = [];
 	this.messages = []; // Messages travelling on the graph
 	
 	// Used to allocate node ids. Reset to 0 when graph is re-generated
@@ -602,11 +646,15 @@ Graph.prototype.draw = function() {
 		
 		this.clear();
 		
-		for (var i = 0; i < this.nodes.length; i++) {
+		/*for (var i = 0; i < this.nodes.length; i++) {
 			this.nodes[i].drawEdges(ctx);
+		}*/
+		for (var i = 0; i < this.edges.length; i++) {
+			this.edges[i].draw(ctx);
 		}
+		
 		for (var i = 0; i < this.nodes.length; i++) {
-			this.nodes[i].drawNode(ctx);
+			this.nodes[i].draw(ctx);
 		}
 		
 		for (var i = 0; i < this.messages.length; i++) {
@@ -621,6 +669,15 @@ Graph.prototype.draw = function() {
 Graph.prototype.addNode = function(node) {
 	this.nodes.push(node);
 	this.valid = false;
+}
+
+/* Connect two nodes */
+Graph.prototype.connectNodes = function(node1, node2) {
+	var edge = new Edge(node1, node2, this, '#000000');
+	
+	this.edges.push(edge); // Save edge in graph
+	node1.link(node2, edge); // Inform nodes of the new edge
+	node2.link(node1, edge); 
 }
 
 /* Clear the graph (DEPRECATED) */
@@ -641,6 +698,7 @@ Graph.prototype.setAllNodeStates = function(nodeState) {
 Graph.prototype.reset = function() {
 	this.nodes = [];
 	this.messages = [];
+	this.edges = [];
 	Node.node_id = 0;
 }
 
@@ -655,8 +713,9 @@ Graph.prototype.isComplete = function() {
 // ****************************************************
 
 function generateArbitraryGraph(graph, canvas, n, density) {
-	// Clear canvas	
-	//var graph = new Graph(canvas);
+	// Clear graph
+	graph.reset();
+	
 	if (density == 1) graph.graphType = "complete";
 	else if (density == 0) graph.graphType = "line";
 	else graph.graphType = "arbitrary"
@@ -690,12 +749,14 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 		graph.addNode(new Node(x,y,15,graph));
 	}
 	
-	// Connect graph
+	// Connect graph (basically create a line graph to make sure the graph is connected)
 	var nodeIndexes = [];
 	for (var i = 0; i < n; i++) {nodeIndexes.push(i);}
 	nodeIndexes = shuffle(nodeIndexes);
-	for (var i = 0; i < n-1; i++) {
-		graph.nodes[nodeIndexes[i]].link(graph.nodes[nodeIndexes[i+1]]);
+	for (var i = 0; i < n-1; i++) {		
+		var node1 = graph.nodes[nodeIndexes[i]];
+		var node2 = graph.nodes[nodeIndexes[i+1]];
+		graph.connectNodes(node1, node2);
 	}
 	
 	// Add random edges
@@ -709,7 +770,7 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 				var n2 = graph.nodes[j];
 				if (n1.adjNodes.indexOf(n2) < 0) {
 					if (skippedFirst || density == 1)
-						n1.link(n2);
+						graph.connectNodes(n1,n2);
 					skippedFirst = true;
 				} 
 				
