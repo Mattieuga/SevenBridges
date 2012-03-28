@@ -53,16 +53,21 @@ Animator.prototype.stopAnimation = function() {
 }
 
 /* Call to send message between nodes */
-Animator.prototype.sendMessage = function(msg, destNode, edge, baseSpeed) {
+Animator.prototype.sendMessage = function(msg, destNode, edge) {
+	var baseSpeed;
+	
 	// Check if FIFO, if so, set the speed to the same as the current messages travelling
 	if (graph.isFIFO && edge.messages.length > 0) {
 		baseSpeed = edge.messages[0].speed;
+	} else {
+		baseSpeed = Math.floor(Math.random()*10) + 1;
 	}
 	
 	// Set message's current speed (without speedModifier)
 	msg.speed = baseSpeed;
 	
-	// Add to edge's messages
+	// Add to edge's and graph's messages
+	graph.messages.push(msg);
 	edge.messages.push(msg);
 	
 	if (this.animating) {
@@ -103,7 +108,8 @@ Animator.prototype.sendMessageLoop = function(msg, destNode, edge, baseSpeed) {
 		if (index >= 0) edge.messages.splice(index,1);
 		
 		// Handle the message at the node
-		destNode.handleMessage(msg);
+		setTimeout(function(){destNode.handleMessage(msg);},0);
+		
 	} else if (this.animating) {
 		// Call back this method in 30 miliseconds
 		var animator = this; // save this to use in closure
@@ -152,9 +158,7 @@ Animator.prototype.broadcast = function() {
 				for (var j = 0; j < this.adjNodes.length; j++) {
 					var adjNode = this.adjNodes[j];
 					var msg = new Message(this.x, this.y, 'flood','#DF375F');
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode), speed);
+					animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode));
 				}	
 				this.setState(WAITING);
 			}
@@ -163,9 +167,7 @@ Animator.prototype.broadcast = function() {
 				for (var j = 0; j < this.adjNodes.length; j++) {
 					var adjNode = this.adjNodes[j];
 					var msg = new Message(this.x, this.y, 'flood','#DF375F');
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode), speed);
+					animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode));
 				}
 				this.setState(DONE);
 			}
@@ -217,36 +219,36 @@ Animator.prototype.territoryAquisition = function() {
 			if (message.message == 'wakeup') // Message 'wakeup'
 			{
 				this.stage = 1;
-				this.nextNeighbour = 1;
+				this.nextNeighbour = 1; // index of 1, we'll send to 0 right now
 				
 				var msg = new Message(this.x, this.y, 'capture',MESSAGE_COLOR);
 				msg.stage = this.stage;
 				msg.val = this.id;
 				msg.sender = this;
-				graph.messages.push(msg);
-				var speed = Math.floor(Math.random()*10) + 1;
-				animator.sendMessage(msg, this.adjNodes[0], this.edgeForAdjacentNode(this.adjNodes[0]), speed);
+				animator.sendMessage(msg, this.adjNodes[0], this.adjEdges[0]);
 
 				this.setState(CANDIDATE);
 			}
 			else if (message.message == 'capture') // Message 'capture'
-			{
-				var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
-				msg.stage = message.stage;
-				msg.val = message.val;
-				msg.sender = this;
-				graph.messages.push(msg);
-				var speed = Math.floor(Math.random()*10) + 1;
-				animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+			{	
+				// set link colors
+				for (var i = 0; i < this.adjNodes.length; i++) {
+					if (this.adjEdges[i])
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
+				}
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
 				
 				this.stage = 1;
 				this.owner = message.sender;
 				this.ownerstage = message.stage+1;
 				
-				this.setState(CAPTURED);
+				var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
+				msg.stage = message.stage;
+				msg.val = message.val;
+				msg.sender = this;
+				animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				
-				// set link color
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				this.setState(CAPTURED);				
 			}
 		}
 		else if (this.state == CANDIDATE) // State CANDIDATE
@@ -259,31 +261,27 @@ Animator.prototype.territoryAquisition = function() {
 					var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				}
 				else
 				{
-					var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
-					msg.stage = message.stage;
-					msg.val = message.val;
-					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
-					this.owner = message.sender;
-					this.ownerstage = message.stage+1;
-					
-					this.setState(CAPTURED);
-					
 					// set link colors
 					for (var i = 0; i < this.adjNodes.length; i++) {
 						if (this.adjEdges[i])
 							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
-					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
 					
+					this.owner = message.sender;
+					this.ownerstage = message.stage+1;
+					
+					this.setState(CAPTURED);
+					
+					var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
+					msg.stage = message.stage;
+					msg.val = message.val;
+					msg.sender = this;
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				}
 			}
 			else if (message.message == 'accept') // Message 'accept'
@@ -294,9 +292,7 @@ Animator.prototype.territoryAquisition = function() {
 					for (var i = 0; i < this.adjNodes.length; i++) {
 						var msg = new Message(this.x, this.y, 'terminate',MESSAGE_COLOR);
 						msg.sender = this;
-						graph.messages.push(msg);
-						var speed = Math.floor(Math.random()*10) + 1;
-						animator.sendMessage(msg, this.adjNodes[i], this.edgeForAdjacentNode(this.adjNodes[i]), speed);
+						animator.sendMessage(msg, this.adjNodes[i], this.edgeForAdjacentNode(this.adjNodes[i]));
 					}
 					this.setState(LEADER);
 				} else {
@@ -304,9 +300,7 @@ Animator.prototype.territoryAquisition = function() {
 					msg.stage = this.stage;
 					msg.val = this.id;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, this.adjNodes[this.nextNeighbour], this.edgeForAdjacentNode(this.adjNodes[this.nextNeighbour]), speed);
+					animator.sendMessage(msg, this.adjNodes[this.nextNeighbour], this.adjEdges[this.nextNeighbour]);
 					this.nextNeighbour++;
 				}
 			}
@@ -337,16 +331,12 @@ Animator.prototype.territoryAquisition = function() {
 					var msg = new Message(this.x, this.y, 'no',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 						
 				    this.setState(PASSIVE);
 				
@@ -366,17 +356,13 @@ Animator.prototype.territoryAquisition = function() {
 					var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				} else {
 					var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.val = message.val;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 					
 					this.owner = message.sender;
 					this.ownerstage = message.stage+1;
@@ -396,16 +382,12 @@ Animator.prototype.territoryAquisition = function() {
 					var msg = new Message(this.x, this.y, 'no',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				}
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
@@ -422,37 +404,31 @@ Animator.prototype.territoryAquisition = function() {
 		}
 		else if (this.state == CAPTURED) // State 'captured'
 		{
-			if (message.message == 'capture') // Message 'capture'
+			if (message.message == 'capture') // Message 'capture' + 
 			{
 				if (message.stage < this.ownerstage) {
 					var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 					msg.ownerstage = this.ownerstage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
-				} else {
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+				} else { // + CLOSE N(x)-{owner}
 					this.attack = message.sender;
 					
 					var msg = new Message(this.x, this.y, 'warning',MESSAGE_COLOR);
 					msg.val = message.val;
 					msg.stage = message.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, this.owner, this.edgeForAdjacentNode(this.owner), 20);
+					animator.sendMessage(msg, this.owner, this.edgeForAdjacentNode(this.owner));
 				}
 			}
-			else if (message.message == 'no') // Message 'no'
+			else if (message.message == 'no') // Message 'no' + OPEN N(x)
 			{
 				var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 				msg.stage = message.stage;
 				msg.sender = this;
-				graph.messages.push(msg);
-				var speed = Math.floor(Math.random()*10) + 1;
-				animator.sendMessage(msg, this.attack, this.edgeForAdjacentNode(this.attack), speed);
+				animator.sendMessage(msg, this.attack, this.edgeForAdjacentNode(this.attack));
 			}
-			else if (message.message == 'yes') // Message 'yes'
+			else if (message.message == 'yes') // Message 'yes' + OPEN N(x)
 			{				
 				this.ownerstage = message.stage+1;
 				this.owner = this.attack;
@@ -461,16 +437,14 @@ Animator.prototype.territoryAquisition = function() {
 				msg.stage = message.stage;
 				msg.val = message.val;
 				msg.sender = this;
-				graph.messages.push(msg);
-				var speed = Math.floor(Math.random()*10) + 1;
-				animator.sendMessage(msg, this.attack, this.edgeForAdjacentNode(this.attack), speed);
+				animator.sendMessage(msg, this.attack, this.edgeForAdjacentNode(this.attack));
 				
 				// set link colors
 				for (var i = 0; i < this.adjNodes.length; i++) {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+				this.edgeForAdjacentNode(this.attack).setColorAndWidth(CAPTURED_LINK_COLOR,2);
 			}
 			else if (message.message == 'warning') // Message 'warning'
 			{
@@ -478,16 +452,12 @@ Animator.prototype.territoryAquisition = function() {
 					var msg = new Message(this.x, this.y, 'no',MESSAGE_COLOR);
 					msg.ownerstage = this.ownerstage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.sender = this;
-					graph.messages.push(msg);
-					var speed = Math.floor(Math.random()*10) + 1;
-					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender), speed);
+					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				}
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
@@ -500,6 +470,15 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+			}
+			else if (message.message == 'accept') // JUST USED FOR UPDATING LINK COLORS
+			{
+				// set link colors
+				for (var i = 0; i < this.adjNodes.length; i++) {
+					if (this.adjEdges[i])
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
+				}
+			    this.edgeForAdjacentNode(this.owner).setColorAndWidth(CAPTURED_LINK_COLOR,2);
 			}
 		}
 	}  
