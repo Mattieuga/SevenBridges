@@ -1,3 +1,6 @@
+//Turn on/off firebug logging
+var logging = true;
+
 // ****************************************************
 //  ANIMATION
 // ****************************************************
@@ -176,6 +179,7 @@ Animator.prototype.broadcast = function() {
 }
 
 Animator.prototype.territoryAquisition = function() {
+	if (logging) console.log("STARTING COMPLETE_ELECT");
 	var animator = this;
 	this.animating = true;
 	
@@ -213,6 +217,8 @@ Animator.prototype.territoryAquisition = function() {
 	Node.prototype.handleMessage = function(message) 
 	{
 		if (!animator.animating) {return};
+		if (logging && message.message != "wakeup") console.log("Node " + this.id + " (" + this.state.name + ") received: "+ message.message+" from Node "+message.sender.id);
+		if (logging && message.message == "wakeup") console.log("Node " + this.id + " (" + this.state.name + ") received: "+ message.message+" spontaneusly");
 		
 		if (this.state == SLEEPING) // State SLEEPING
 		{
@@ -228,6 +234,8 @@ Animator.prototype.territoryAquisition = function() {
 				animator.sendMessage(msg, this.adjNodes[0], this.adjEdges[0]);
 
 				this.setState(CANDIDATE);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.adjNodes[0].id);
+				
 			}
 			else if (message.message == 'capture') // Message 'capture'
 			{	
@@ -248,7 +256,21 @@ Animator.prototype.territoryAquisition = function() {
 				msg.sender = this;
 				animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				
-				this.setState(CAPTURED);				
+				this.setState(CAPTURED);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
+								
+			}
+			else if (message.message == 'terminate') // Message 'terminate'
+			{
+				this.setState(FOLLOWER);
+				
+				// set link colors
+				for (var i = 0; i < this.adjNodes.length; i++) {
+					if (this.adjEdges[i])
+						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
+				}
+			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
 		else if (this.state == CANDIDATE) // State CANDIDATE
@@ -256,12 +278,13 @@ Animator.prototype.territoryAquisition = function() {
 			if (message.message == 'capture') // Message 'capture'
 			{
 				if    ((message.stage < this.stage) 
-				   || ((message.stage = this.stage) && (message.val > this.id)))
+				   || ((message.stage == this.stage) && (message.val > this.id)))
 				{
 					var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 				else
 				{
@@ -282,6 +305,7 @@ Animator.prototype.territoryAquisition = function() {
 					msg.val = message.val;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);	
 				}
 			}
 			else if (message.message == 'accept') // Message 'accept'
@@ -293,6 +317,7 @@ Animator.prototype.territoryAquisition = function() {
 						var msg = new Message(this.x, this.y, 'terminate',MESSAGE_COLOR);
 						msg.sender = this;
 						animator.sendMessage(msg, this.adjNodes[i], this.edgeForAdjacentNode(this.adjNodes[i]));
+						if (logging) console.log("Node " + this.id + " (LEADER, "+this.stage+") sent "+msg.message+" message to : Node "+ this.adjNodes[i].id);
 					}
 					this.setState(LEADER);
 				} else {
@@ -301,6 +326,7 @@ Animator.prototype.territoryAquisition = function() {
 					msg.val = this.id;
 					msg.sender = this;
 					animator.sendMessage(msg, this.adjNodes[this.nextNeighbour], this.adjEdges[this.nextNeighbour]);
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.adjNodes[this.nextNeighbour].id);
 					this.nextNeighbour++;
 				}
 			}
@@ -313,6 +339,7 @@ Animator.prototype.territoryAquisition = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
 			{
@@ -324,14 +351,16 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 			else if (message.message == 'warning') // Message 'warning'
 			{
-				if ((message.stage < this.stage) || ((message.stage = this.stage) && (message.val > this.id))) {
+				if ((message.stage < this.stage) || ((message.stage == this.stage) && (message.val > this.id))) {
 					var msg = new Message(this.x, this.y, 'no',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
@@ -345,6 +374,7 @@ Animator.prototype.territoryAquisition = function() {
 						if (this.adjEdges[i])
 							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 			}
 		} 
@@ -352,11 +382,12 @@ Animator.prototype.territoryAquisition = function() {
 		{
 			if (message.message == 'capture') // Message 'capture'
 			{
-				if ((message.stage < this.stage) || ((message.stage = this.stage) && (message.val > this.id))) {
+				if ((message.stage < this.stage) || ((message.stage == this.stage) && (message.val > this.id))) {
 					var msg = new Message(this.x, this.y, 'reject',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				} else {
 					var msg = new Message(this.x, this.y, 'accept',MESSAGE_COLOR);
 					msg.stage = message.stage;
@@ -374,20 +405,23 @@ Animator.prototype.territoryAquisition = function() {
 							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
 					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 			}
 			else if (message.message == 'warning') // Message 'warning'
 			{
-				if ((message.stage < this.stage) || ((message.stage = this.stage) && (message.val > this.id))) {
+				if ((message.stage < this.stage) || ((message.stage == this.stage) && (message.val > this.id))) {
 					var msg = new Message(this.x, this.y, 'no',MESSAGE_COLOR);
 					msg.stage = this.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
@@ -400,6 +434,7 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
 		else if (this.state == CAPTURED) // State 'captured'
@@ -411,6 +446,7 @@ Animator.prototype.territoryAquisition = function() {
 					msg.ownerstage = this.ownerstage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				} else { // + CLOSE N(x)-{owner}
 					this.attack = message.sender;
 					
@@ -419,6 +455,7 @@ Animator.prototype.territoryAquisition = function() {
 					msg.stage = message.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, this.owner, this.edgeForAdjacentNode(this.owner));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.owner.id + " and saved attacker: Node "+this.attack.id);
 				}
 			}
 			else if (message.message == 'no') // Message 'no' + OPEN N(x)
@@ -427,6 +464,7 @@ Animator.prototype.territoryAquisition = function() {
 				msg.stage = message.stage;
 				msg.sender = this;
 				animator.sendMessage(msg, this.attack, this.edgeForAdjacentNode(this.attack));
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.attack.id);
 			}
 			else if (message.message == 'yes') // Message 'yes' + OPEN N(x)
 			{				
@@ -445,6 +483,7 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 				this.edgeForAdjacentNode(this.attack).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.attack.id);
 			}
 			else if (message.message == 'warning') // Message 'warning'
 			{
@@ -453,11 +492,13 @@ Animator.prototype.territoryAquisition = function() {
 					msg.ownerstage = this.ownerstage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				} else {
 					var msg = new Message(this.x, this.y, 'yes',MESSAGE_COLOR);
 					msg.stage = message.stage;
 					msg.sender = this;
 					animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 			}
 			else if (message.message == 'terminate') // Message 'terminate'
@@ -470,6 +511,7 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 			else if (message.message == 'accept') // JUST USED FOR UPDATING LINK COLORS
 			{
@@ -479,6 +521,7 @@ Animator.prototype.territoryAquisition = function() {
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
 			    this.edgeForAdjacentNode(this.owner).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
 	}  
