@@ -178,7 +178,7 @@ Animator.prototype.broadcast = function() {
 	}  
 }
 
-Animator.prototype.territoryAquisition = function() {
+Animator.prototype.completeElect = function() {
 	if (logging) console.log("STARTING COMPLETE_ELECT");
 	var animator = this;
 	this.animating = true;

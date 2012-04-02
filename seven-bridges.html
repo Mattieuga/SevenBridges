@@ -37,12 +37,12 @@
 				animator.broadcast();
 			}
 
-			this.TerritoryAcquisition = function () {
+			this.CompleteElect = function () {
 	            if (graph.isComplete()) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
 					animator = new Animator(graph,controlData.Speed);
-					animator.territoryAquisition();
+					animator.completeElect();
 				} else {
 					/*$('.cr').each(function(i, obj) {
 					    //test
@@ -107,7 +107,7 @@
 			var algoF = gui.addFolder('Algorithms');
 			speedController = algoF.add(controlData, "Speed", 0,10);
 			algoF.add(controlData, "Flood");
-			algoF.add(controlData, "TerritoryAcquisition");
+			algoF.add(controlData, "CompleteElect");
 			algoF.add(controlData, "Stop");
 			algoF.open();	
 			
