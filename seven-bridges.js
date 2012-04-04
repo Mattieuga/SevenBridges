@@ -560,10 +560,6 @@ Node.prototype.draw = function(ctx) {
 	ctx.closePath();
 	ctx.fillStyle = this.state.color;
 	ctx.strokeStyle = "#000000";
-	//ctx.shadowColor = "#555555";
-	//ctx.shadowBlur = 5;
-	//ctx.shadowOffsetX = 2;
-	//ctx.shadowOffsetY = 2;
 	ctx.fill();
 	ctx.stroke();
 	

@@ -1,0 +1,152 @@
+	#overlay {
+		width:100%;
+		height:100%;
+		background-color:rgba(0,0,0,0.5);
+		z-index: 20;
+		position:absolute;
+		display:none;
+	}
+	
+	.overlayOff {
+		
+	}
+	.tut {
+		display:none;
+	}
+	.disabledFunction {
+		background:#292929 !important; 
+		border-left:3px solid #666666 !important;
+		color: #666666 !important;
+	}
+	
+	.disabledSlider {
+		background-color: #666666 !important;
+	}
+	
+	.disabledText {
+		color:#666666 !important;
+	}
+	
+	.alert {
+		position:absolute;
+		background: #1a1a1a;
+		margin: 0 0 1px;
+		width: 245px;
+		z-index: 3;
+		font: 100%/18px helvetica, arial, sans-serif;
+		max-height:70px;
+		max-width:200px;
+		width:200px;
+	}
+	.border-g {
+		border-left: 4px solid #46D21C;				
+	}
+	
+	.border-r {
+		border-left: 4px solid #EE0E63;				
+	}
+	.alert-arrow {
+		position:absolute;
+		width: 0;
+		height: 0;
+		border-top: 35px solid transparent;
+		border-bottom: 35px solid transparent;
+		border-left: 15px solid #1a1a1a;
+		top:0px;
+		left:200px;
+	}
+	.alert h1 {				
+		color: #fff;
+		font-size: 16px;
+		line-height: 16px;
+		margin: 0 0 2px;
+	}
+	
+	.alert p {
+		font-size: 12px;	
+		margin: 0 0 15px;
+	}
+	
+	.alert-inner {
+		padding: 10px 0px 10px 10px;
+	}
+	
+	#canvas {
+		display: block;
+		left: 0;
+		position: absolute;
+		top: 0;
+		z-index: 2;
+	}
+		
+	html, body {
+	  	width:  100%;
+	  	height: 100%;
+	  	margin: 0px;
+		background: white url(images/bright_squares.png);
+		color: #999;
+	}	
+	
+	#gui {
+		right: 0;
+		position: fixed;
+		top: 0;
+		z-index: 3;
+	}
+	
+	#info {
+		background: #1a1a1a;
+		margin: 0 0 1px;				
+		position: relative;		
+		width: 245px;
+		z-index: 3;
+		font: 100%/18px helvetica, arial, sans-serif;
+	}
+	
+	#info-inner {
+		padding: 20px 20px 0 20px;
+	}
+	
+	#info h1 {				
+		color: #fff;
+		font-size: 16px;
+		line-height: 16px;
+		margin: 0 0 10px;
+	}
+	
+	#info p {
+		font-size: 11px;	
+		margin: 0 0 15px;
+	}
+	
+	#info-toggle {
+		background: #000;
+		border-top: 1px solid #2c2c2c;
+		color: #fff;
+		display: block;
+		font-weight: normal;
+		height: 20px;
+		line-height: 19px;
+		font-size: 11px;
+		text-align: center;
+	}
+	
+	#info-toggle:hover {
+		background: #111;	
+	}
+	
+	a {
+		color: #44A1E4;
+		font-weight: bold;
+		text-decoration: none;
+	}
+
+	a:hover {
+		color: #fff;	
+	}
+	
+	.help {
+		text-align:right;
+		font-size: 12px;	
+		
+	}
