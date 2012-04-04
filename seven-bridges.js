@@ -200,8 +200,8 @@ Animator.prototype.completeElect = function() {
 	var PASSIVE = new State("passvive",PASSIVE_NODE_COLOR);
 	var CAPTURED = new State("captured",CAPTURED_NODE_COLOR);
 	
-	var LEADER = new State("passvive",LEADER_NODE_COLOR);
-	var FOLLOWER = new State("passvive",FOLLOWER_NODE_COLOR);
+	var LEADER = new State("leader",LEADER_NODE_COLOR);
+	var FOLLOWER = new State("follower",FOLLOWER_NODE_COLOR);
 	
 	this.graph.setAllNodeStates(SLEEPING);
 	this.graph.setAllEdgesColorAndWidth(DEFAULT_LINK_COLOR,1);
@@ -527,6 +527,192 @@ Animator.prototype.completeElect = function() {
 	}  
 }
 
+Animator.prototype.spanningTreeConstruction = function() {
+	var animator = this;
+	this.animating = true;
+	
+	// Colors
+	const TREE_LINK_COLOR = '#000000';
+	const DEFAULT_LINK_COLOR = '#888888'
+	const MESSAGE_COLOR = '#C93153';
+
+	const SLEEPING_NODE_COLOR = '#FFFFFF';
+	const ACTIVE_NODE_COLOR = '#F2E7C1';
+	const INITIATOR_NODE_COLOR = '#6BBCE8';
+	const DONE_NODE_COLOR = '#F53D68';
+	const ROOT_NODE_COLOR = '#5A9BBF';
+	
+	
+	// Node states
+	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
+	var INITIATOR = new State("initiator",INITIATOR_NODE_COLOR);
+	var ACTIVE = new State("active",ACTIVE_NODE_COLOR);
+	var DONE = new State("done",DONE_NODE_COLOR);
+	var ROOT = new State("done",ROOT_NODE_COLOR);
+	
+	
+	this.graph.setAllNodeStates(SLEEPING);
+	this.graph.setAllEdgesColorAndWidth(DEFAULT_LINK_COLOR,1);
+	
+	// Wakeup nodes
+	var randomIndex = Math.floor(Math.random()*this.graph.nodes.length);
+	var initiatorNode = this.graph.nodes[randomIndex];
+	initiatorNode.setState(INITIATOR);
+	var fnc = function(initiatorNode){ return function(){initiatorNode.handleMessage(new Message(0,0,'initiate',0));}}(initiatorNode)
+	setTimeout(fnc, 500);
+	
+	if (logging) console.log("STARTING SPANNING TREE CONSTRUCTION, Initiator: " + initiatorNode.id);
+	
+	
+	Node.prototype.handleMessage = function(message) {
+		if (!animator.animating) {return};
+		if (this.state == INITIATOR) {
+			if (message.message == 'initiate') { // Message 'initiate'
+				this.root = true;
+				this.treeNeighbours = [];
+				this.counter = 0;
+				this.ackCounter = 0;
+				
+				for (var j = 0; j < this.adjNodes.length; j++) {
+					var adjNode = this.adjNodes[j];
+					var msg = new Message(this.x, this.y, 'question','#DF375F');
+					msg.sender = this;
+					animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode));
+					if (logging) console.log("Node " + this.id + " (INITIATOR) sent "+msg.message+" message to : Node "+ adjNode.id);
+				}	
+				
+				this.setState(ACTIVE);
+			}			
+		} else if (this.state == SLEEPING) {
+			if (message.message == 'question') { // Message 'initiate'
+				if (logging) console.log("Node " + this.id + " (SLEEPING) received "+message.message+" from Node "+ message.sender.id);
+				this.root = false;
+				this.treeParent = message.sender;
+				this.treeNeighbours = [];
+				this.treeNeighbours.push(message.sender);
+				this.counter = 1;
+				this.ackCounter = 0;
+
+				var msg = new Message(this.x, this.y, 'yes','#DF375F');
+				msg.sender = this;
+				animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
+				if (logging) console.log("Node " + this.id + " (SLEEPING) sent "+msg.message+" message to : Node "+ message.sender.id);
+				
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(TREE_LINK_COLOR,2);
+				
+				if (this.counter == this.adjNodes.length) {
+					this.check();
+				} else {
+					for (var j = 0; j < this.adjNodes.length; j++) {
+						var adjNode = this.adjNodes[j];
+						if (adjNode != message.sender) {
+							var msg = new Message(this.x, this.y, 'question','#DF375F');
+							msg.sender = this;
+							animator.sendMessage(msg, adjNode, this.edgeForAdjacentNode(adjNode));
+							if (logging) console.log("Node " + this.id + " (SLEEPING) sent "+msg.message+" message to : Node "+ adjNode.id);
+						}
+					}
+				}
+				this.setState(ACTIVE);
+			}			
+		} else if (this.state == ACTIVE) {
+			if (logging) console.log("Node " + this.id + " (ACTIVE) received "+message.message+" from Node "+ message.sender.id);
+			if (message.message == 'question') { // Message 'question'
+				this.counter++;
+				if (logging) console.log("Counter: "+this.counter+" and AckCounter: "+this.ackCounter+" and Neighbours: "+this.adjNodes.length+" and TreeNeighbours: "+this.treeNeighbours.length);
+				
+				if (this.counter == this.adjNodes.length) { //&& !this.root) {
+					this.check();
+				}/* else if (this.counter == this.adjNodes.length) {
+					if (this.root) {
+						if (this.ackCounter == this.treeNeighbours.length) {
+							for (var j = 0; j < this.treeNeighbours.length; j++) {
+								var neighbour = this.treeNeighbours[j];
+								var msg = new Message(this.x, this.y, 'terminate','#DF375F');
+								msg.sender = this;
+								animator.sendMessage(msg, neighbour, this.edgeForAdjacentNode(neighbour));
+								if (logging) console.log("Node " + this.id + " (ACTIVE) sent "+msg.message+" message to : Node "+ neighbour.id);
+							}
+							if (this.root == true) 
+								this.setState(ROOT);
+							else 
+								this.setState(DONE);
+						}
+					}
+				}*/
+			} else if (message.message == 'yes') { // Message 'yes'
+				this.treeNeighbours.push(message.sender);
+				this.counter++;
+				if (logging) console.log("Counter: "+this.counter+" and AckCounter: "+this.ackCounter+" and Neighbours: "+this.adjNodes.length+" and TreeNeighbours: "+this.treeNeighbours.length);
+				
+				if (this.counter == this.adjNodes.length && !this.root) {
+					this.check();
+				}
+			} else if (message.message == 'ack') { // Message 'initiate'
+				this.ackCounter++;
+				if (logging) console.log("Counter: "+this.counter+" and AckCounter: "+this.ackCounter+" and Neighbours: "+this.adjNodes.length+" and TreeNeighbours: "+this.treeNeighbours.length);
+				
+				if (this.counter == this.adjNodes.length) {
+					if (this.root) {
+						if (this.ackCounter == this.treeNeighbours.length) {
+							for (var j = 0; j < this.treeNeighbours.length; j++) {
+								var neighbour = this.treeNeighbours[j];
+								var msg = new Message(this.x, this.y, 'terminate','#DF375F');
+								msg.sender = this;
+								animator.sendMessage(msg, neighbour, this.edgeForAdjacentNode(neighbour));
+								if (logging) console.log("Node " + this.id + " (ACTIVE) sent "+msg.message+" message to : Node "+ neighbour.id);
+							}
+							if (this.root == true) 
+								this.setState(ROOT);
+							else 
+								this.setState(DONE);
+						}
+					} else if (this.ackCounter == this.treeNeighbours.length-1) {
+						var msg = new Message(this.x, this.y, 'ack','#DF375F');
+						msg.sender = this;
+						animator.sendMessage(msg, this.treeParent, this.edgeForAdjacentNode(this.treeParent));
+						if (logging) console.log("Node " + this.id + " (ACTIVE) sent "+msg.message+" message to : Node "+ this.treeParent);
+					}
+				}
+			} else if (message.message == 'terminate') { // Message 'initiate'
+				for (var j = 0; j < this.treeNeighbours.length; j++) {
+					var neighbour = this.treeNeighbours[j];
+					if (neighbour != this.treeParent) {
+						var msg = new Message(this.x, this.y, 'terminate','#DF375F');
+						msg.sender = this;
+						animator.sendMessage(msg, neighbour, this.edgeForAdjacentNode(neighbour));
+					}
+				}
+				if (this.root == true) 
+					this.setState(ROOT);
+				else 
+					this.setState(DONE);
+			}
+		}
+	}
+	
+	Node.prototype.check = function() {
+		if (logging) console.log("Node " + this.id + "("+this.state.name+") checking...");
+		if (this.treeNeighbours.length == 1) { // LEAF
+			if (logging) console.log("Node " + this.id + " (ACTIVE) passed check: TreeNeighbours="+this.treeNeighbours.length+" and parent: "+this.treeParent.id);
+			
+			var msg = new Message(this.x, this.y, 'ack','#DF375F');
+			msg.sender = this;
+			animator.sendMessage(msg, this.treeParent, this.edgeForAdjacentNode(this.treeParent));
+			if (logging) console.log("Node " + this.id + "("+this.state.name+") sent "+msg.message+" message to : Node "+ this.treeParent.id);
+			
+		} else if (this.ackCounter == this.treeNeighbours.length-1 && this.counter == this.adjNodes.length){
+			if (logging) console.log("Node " + this.id + " (ACTIVE) passed non-leaf check: TreeNeighbours="+this.treeNeighbours.length+" and parent: "+this.treeParent.id);
+			var msg = new Message(this.x, this.y, 'ack','#DF375F');
+			msg.sender = this;
+			animator.sendMessage(msg, this.treeParent, this.edgeForAdjacentNode(this.treeParent));
+			if (logging) console.log("Node " + this.id + "("+this.state.name+") sent "+msg.message+" message to : Node "+ this.treeParent.id);
+		} else {
+			if (logging) console.log("Node " + this.id + " (ACTIVE) failed check: TreeNeighbours="+this.treeNeighbours.length+" and parent: "+this.treeParent.id);
+			
+		}
+	}
+}
 // ****************************************************
 //  NODE
 // ****************************************************

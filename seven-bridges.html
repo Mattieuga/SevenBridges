@@ -61,6 +61,7 @@
 			var algoF = gui.addFolder('Algorithm');
 			algoF.add(controlData, "Flood");
 			algoF.add(controlData, "CompleteElect");
+			algoF.add(controlData, "SpanningTreeConstruction");
 			algoF.open();	
 			
 		
@@ -129,6 +130,13 @@
 						$("#alert").css("left",""+(sliderLocation.left-240)+"px");
 					};
 				}
+			}
+			
+			this.SpanningTreeConstruction = function () {
+				if (animator != null) animator.stopAnimation();
+				animator = null;
+				animator = new Animator(graph,controlData.Speed);
+				animator.spanningTreeConstruction();
 			}
 
 			this.Stop = function() {
