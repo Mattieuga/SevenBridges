@@ -1,5 +1,12 @@
-//Turn on/off firebug logging
-var logging = true;
+// Constants
+const ARBITRARY_GRAPH = 0;
+const COMPLETE_GRAPH = 1;
+const RING_GRAPH = 2;
+const LINE_GRAPH = 3;
+
+
+// Turn on/off firebug logging
+var logging = false;
 
 // ****************************************************
 //  ANIMATION
@@ -713,19 +720,72 @@ Animator.prototype.spanningTreeConstruction = function() {
 		}
 	}
 }
+
+Animator.prototype.ringElectAllTheWay = function() { 
+	if (logging) console.log("STARTING COMPLETE_ELECT");
+	var animator = this;
+	this.animating = true;
+	
+	// Colors
+	const MESSAGE_COLOR = '#C93153';
+	const SLEEPING_NODE_COLOR = '#FFFFFF';
+	const CANDIDATE_NODE_COLOR = '#F2E7C1';
+	const LEADER_NODE_COLOR = '#E3DBB9';
+	const FOLLOWER_NODE_COLOR = '#5A9BBF';
+	
+	// Node states
+	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
+	var AWAKE = new State("awake",CANDIDATE_NODE_COLOR);
+	var LEADER = new State("leader",LEADER_NODE_COLOR);
+	var FOLLOWER = new State("follower",FOLLOWER_NODE_COLOR);
+	
+	this.graph.setAllNodeStates(SLEEPING);
+	this.graph.setAllEdgesColorAndWidth('#000000',1);
+	
+	// Wakeup nodes
+	for (var i = 0; i < this.graph.nodes.length; i++) {
+		var node = this.graph.nodes[i];
+		var sleepTime = Math.floor(Math.random()*3) * (Math.floor(Math.random()*500)+500);		
+		var fnc = function(aNode){ return function(){aNode.handleMessage(new Message(0,0,'wakeup',0));}}(node)
+		setTimeout(fnc, sleepTime);
+	}
+	
+	Node.prototype.handleMessage = function(message) 
+	{
+		if (!animator.animating) {return};		
+		if (this.state == SLEEPING) // State SLEEPING
+		{
+			if (message.message == 'wakeup') // Message 'wakeup'
+			{
+				this.count = 0;
+				this.size = 1;
+				this.known = false;
+				this.min = this.id;
+				
+				var msg = new Message(this.x, this.y, "elect",MESSAGE_COLOR);
+				msg.size = this.size;
+				msg.id = this.id;
+				msg.sender = this;
+				animator.sendMessage(msg, this.adjNodes[0], this.adjEdges[0]);
+
+				this.setState(AWAKE);				
+			} else if (message.message = "elect") {
+				
+			}
+}
 // ****************************************************
 //  NODE
 // ****************************************************
-function Node(x,y,r,graph) {
+function Node(x,y,r,graph,id) {
 	// Static node_id
-	if (typeof Node.node_id == 'undefined') {
-		Node.node_id = 0;
-	}
+	//if (typeof Node.node_id == 'undefined') {
+	//	Node.node_id = 0;
+	//}
 	// Location & Dimensions
 	this.x = x || 0;
 	this.y = y || 0;
 	this.r = r || 15.0;
-	this.id = Node.node_id;
+	this.id = id; //Node.node_id;
 	Node.node_id++;
 	
 	// Adjacency List
@@ -752,7 +812,11 @@ Node.prototype.draw = function(ctx) {
 	// Draw id
 	ctx.font = "16pt Century Gothic";
 	ctx.fillStyle = "#000000"
-	ctx.fillText(""+this.id,this.x-6,this.y+6);
+	if (this.id < 10)
+		ctx.fillText(""+this.id,this.x-6,this.y+8);
+	else
+		ctx.fillText(""+this.id,this.x-12,this.y+8);
+	
 }
 
 /* Link two nodes with an edge by indorming them of their adjencency and their edge */
@@ -1033,9 +1097,9 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 	// Clear graph
 	graph.clear();
 	
-	if (density == 1) graph.graphType = "complete";
-	else if (density == 0) graph.graphType = "line";
-	else graph.graphType = "arbitrary"
+	if (density == 1) graph.graphType = COMPLETE_GRAPH;
+	else if (density == 0) graph.graphType = LINE_GRAPH;
+	else graph.graphType = ARBITRARY_GRAPH
 	
 	var canvasRadius;
 	var canvasHeight = canvas.height;
@@ -1056,6 +1120,11 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 	if (addLeftOffset) canvasX +=250;
 	var canvasY = canvasHeight/2;
 	
+	// Randomize the order of node ids
+	var nodeIndexes = [];
+	for (var i = 0; i < n; i++) {nodeIndexes.push(i);}
+	nodeIndexes = shuffle(nodeIndexes);
+	
 	// Add nodes in a circle
 	for (var i = 0; i < n; i++) {
 		var deg = 360/n*i;
@@ -1063,13 +1132,11 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 		
 		var x = canvasRadius*Math.cos(rad)+canvasX;
 		var y = canvasRadius*Math.sin(rad)+canvasY;
-		graph.addNode(new Node(x,y,15,graph));
+		graph.addNode(new Node(x,y,15,graph,nodeIndexes[i]));
 	}
 	
 	// Connect graph (basically create a line graph to make sure the graph is connected)
-	var nodeIndexes = [];
-	for (var i = 0; i < n; i++) {nodeIndexes.push(i);}
-	nodeIndexes = shuffle(nodeIndexes);
+	
 	for (var i = 0; i < n-1; i++) {		
 		var node1 = graph.nodes[nodeIndexes[i]];
 		var node2 = graph.nodes[nodeIndexes[i+1]];
@@ -1098,10 +1165,64 @@ function generateArbitraryGraph(graph, canvas, n, density) {
 	return graph;
 }
 
-function generateCompleteGraph(canvas, n) {
-	generateArbitraryGraph(canvas, n, 1);
+function generateCompleteGraph(graph, canvas, n) {
+	generateArbitraryGraph(graph, canvas, n, 1);
 }
 
+function generateLineGraph(graph, canvas, n) {
+	generateArbitraryGraph(graph, canvas, n, 0);
+}
+
+function generateRingGraph(graph, canvas, n) {
+	// Clear graph
+	graph.clear();
+	
+	graph.graphType = RING_GRAPH;
+		
+	var canvasRadius;
+	var canvasHeight = canvas.height;
+	var canvasWidth = canvas.width-250;
+	
+	var addLeftOffset = false;
+	if (window.innerWidth > 900) {
+		var addLeftOffset = true;
+		canvasWidth -=250;
+	}
+	
+	if (canvasWidth > canvasHeight) {
+		canvasRadius = canvasHeight/2-25;
+	} else {
+		canvasRadius = canvasWidth/2-25;
+	}
+	var canvasX = canvasWidth/2;
+	if (addLeftOffset) canvasX +=250;
+	var canvasY = canvasHeight/2;
+	
+	// Randomize the order of node ids
+	var nodeIndexes = [];
+	for (var i = 0; i < n; i++) {nodeIndexes.push(i);}
+	nodeIndexes = shuffle(nodeIndexes);
+	
+	// Add nodes in a circle
+	for (var i = 0; i < n; i++) {
+		var deg = 360/n*i;
+		var rad = deg*Math.PI/180;
+		
+		var x = canvasRadius*Math.cos(rad)+canvasX;
+		var y = canvasRadius*Math.sin(rad)+canvasY;
+		graph.addNode(new Node(x,y,15,graph,nodeIndexes[i]));
+	}
+	
+	// Connect graph in a ring
+	
+	for (var i = 0; i < n; i++) {		
+		var node1 = graph.nodes[i];
+		var node2 = graph.nodes[(i+1)%n];
+		graph.connectNodes(node1, node2);
+	}
+	
+	return graph;
+}
 
 
 // ****************************************************

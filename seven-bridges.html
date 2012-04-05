@@ -22,7 +22,8 @@
 		const INIT_NODE = 10;
 		const INIT_DENSITY = 0.501;
 		const INIT_SPEED = 4;
-	
+		const INIT_TYPE = 0;
+		
 		// Global vars
 		var graph = null;
 		var animator = null;
@@ -48,8 +49,9 @@
 			// Build GUI
 			var graphF = gui.addFolder('Graph');
 			nodeController = graphF.add(controlData, "Nodes",0,100).step(1);
-			densityController = graphF.add(controlData, "Density",0,1).listen(); // We listen to update when territory is chosen
+			densityController = graphF.add(controlData, "Density",0,1).listen();
 			densityIndex = 1;
+			graphTypeController = graphF.add(controlData, "GraphType", { Arbitrary: ARBITRARY_GRAPH, Complete: COMPLETE_GRAPH, Ring: RING_GRAPH, Line: LINE_GRAPH });
 			graphF.add(controlData, "Generate");
 			graphF.open();
 		
@@ -64,17 +66,40 @@
 			algoF.add(controlData, "SpanningTreeConstruction");
 			algoF.open();	
 			
-		
 			// Generate a graph
 			generateGraph();
-		
-		
+				
 			speedController.onChange(function(value) {
 				controlData.Speed = value;
 				if (animator != null)
 					animator.setSpeedModifier(value);
 			}); 
-		
+			
+			graphTypeController.onChange(function(value) {
+				if (value == COMPLETE_GRAPH) {
+					controlData.Density = 1;
+					graphTypeController.updateDisplay();
+				} else if (value == LINE_GRAPH) {
+					controlData.Density = 0;
+					graphTypeController.updateDisplay();
+				} else if (value == ARBITRARY_GRAPH) {
+					controlData.Density = 0.5;
+					graphTypeController.updateDisplay();	
+				}
+			});
+			
+			densityController.onChange(function(value) {
+				if (value == 1 && controlData.GraphType != COMPLETE_GRAPH) {
+					controlData.GraphType = COMPLETE_GRAPH;
+					graphTypeController.updateDisplay();
+				} else if (value == 0 && controlData.GraphType != LINE_GRAPH) {
+					controlData.GraphType = LINE_GRAPH;
+					graphTypeController.updateDisplay();
+				} else if (value > 0 && value < 1 && controlData.GraphType != ARBITRARY_GRAPH) {
+					controlData.GraphType = ARBITRARY_GRAPH;
+					graphTypeController.updateDisplay();
+				} 
+			});
 		
 			// Add info toggle
 			$('#info-toggle').on('click', function(e){
@@ -91,6 +116,8 @@
 			this.Nodes = INIT_NODE;
 		  	this.Density = INIT_DENSITY;
 			this.Speed = INIT_SPEED;
+			this.GraphType = INIT_TYPE;
+			
 		  	this.Generate = function() {
 				generateGraph();
 			};
@@ -103,7 +130,7 @@
 			}
 
 			this.CompleteElect = function () {
-	            if (graph.isComplete()) {
+	            if (graph.graphType == COMPLETE_GRAPH) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
 					animator = new Animator(graph,controlData.Speed);
@@ -139,6 +166,35 @@
 				animator.spanningTreeConstruction();
 			}
 
+			this.RingElection_Stages = function () {
+				if (graph.graphType == RING_GRAPH) {
+					if (animator != null) animator.stopAnimation();
+					animator = null;
+					animator = new Animator(graph,controlData.Speed);
+					animator.ringElectStages();
+				} else {
+					var slider = $("span:contains('GraphType')");
+					var sliderLocation = slider.offset();
+					$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+					$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+								
+					$("#alert").show( "drop", {}, 100, callback);
+					//$("#alert-arrow").show( "drop", {}, 500, callback);
+				
+					function callback() {
+						setTimeout(function() {
+							$( "#alert:visible" ).removeAttr( "style" ).fadeOut('fast',callback2);
+							$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+							$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+						}, 3000 );
+					};
+				
+					function callback2() {
+						$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+						$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+					};
+				}	
+			}
 			this.Stop = function() {
 				animator.stopAnimation();
 			}
@@ -159,7 +215,14 @@
 			}
 		
 			if (graph == null) graph = new Graph(canvas)
-			generateArbitraryGraph(graph, canvas, controlData.Nodes, controlData.Density);			
+			if (controlData.GraphType == ARBITRARY_GRAPH)
+				generateArbitraryGraph(graph, canvas, controlData.Nodes, controlData.Density);			
+			else if (controlData.GraphType == LINE_GRAPH)
+				generateLineGraph(graph, canvas, controlData.Nodes);
+			else if (controlData.GraphType == COMPLETE_GRAPH)
+				generateCompleteGraph(graph, canvas, controlData.Nodes);
+			else if (controlData.GraphType == RING_GRAPH)
+				generateRingGraph(graph, canvas, controlData.Nodes);
 		}
 	</script>
 	<title>SevenBridges Simulator</title>
