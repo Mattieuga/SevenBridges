@@ -1,9 +1,8 @@
 // Constants
-const ARBITRARY_GRAPH = 0;
-const COMPLETE_GRAPH = 1;
-const RING_GRAPH = 2;
-const LINE_GRAPH = 3;
-
+var ARBITRARY_GRAPH = 0;
+var COMPLETE_GRAPH = 1;
+var RING_GRAPH = 2;
+var LINE_GRAPH = 3;
 
 // Turn on/off firebug logging
 var logging = false;
@@ -757,21 +756,85 @@ Animator.prototype.ringElectAllTheWay = function() {
 		{
 			if (message.message == 'wakeup') // Message 'wakeup'
 			{
-				this.count = 0;
-				this.size = 1;
+				this.count = 1;
 				this.known = false;
 				this.min = this.id;
+				this.ringsize = 1;
 				
-				var msg = new Message(this.x, this.y, "elect",MESSAGE_COLOR);
-				msg.size = this.size;
+				var msg = new Message(this.x, this.y, "elect("+this.id+")",MESSAGE_COLOR);
+				msg.count = this.ringsize;
 				msg.id = this.id;
 				msg.sender = this;
 				animator.sendMessage(msg, this.adjNodes[0], this.adjEdges[0]);
 
 				this.setState(AWAKE);				
-			} else if (message.message = "elect") {
+			} else if (message.message.substring(0,5) == "elect") {
+				this.count = 1;
+				this.known = false;
+				this.min = this.id;
+				this.ringsize = 1;
 				
+				var msg = new Message(this.x, this.y, "elect("+this.id+")",MESSAGE_COLOR);
+				msg.count = this.ringsize;
+				msg.id = this.id;
+				msg.sender = this;
+				animator.sendMessage(msg, this.adjNodes[0], this.adjEdges[0]);
+
+				var msg = new Message(this.x, this.y, message.message,MESSAGE_COLOR);
+				msg.count = message.count+1;
+				msg.id = message.id;
+				msg.sender = this;
+				var targetNode;
+				if (this.adjNodes[0] == message.sender) 
+					targetNode = this.adjNodes[1];
+				else 
+					targetNode = this.adjNodes[0];
+				animator.sendMessage(msg, targetNode, this.edgeForAdjacentNode(targetNode));
+				
+				if (this.min > message.id) 
+					this.min = message.id;
+				this.count++;
+				
+				this.setState(AWAKE);				
 			}
+		} else if (this.state == AWAKE) { // State SLEEPING
+			if (message.message.substring(0,5) == "elect") {
+				if (message.id != this.id) {
+					var msg = new Message(this.x, this.y, message.message,MESSAGE_COLOR);
+					msg.count = message.count+1;
+					msg.id = message.id;
+					msg.sender = this;
+					
+					var targetNode;
+					if (this.adjNodes[0] == message.sender) 
+						targetNode = this.adjNodes[1];
+					else 
+						targetNode = this.adjNodes[0];
+					animator.sendMessage(msg, targetNode, this.edgeForAdjacentNode(targetNode));
+
+					if (this.min > message.id) 
+						this.min = message.id;
+					this.count++;
+					if (this.known == true) 
+						this.check();
+				} else {
+					this.ringsize = message.count;
+					this.known = true;
+					this.check();
+				}
+			}
+		}
+	}
+	
+	Node.prototype.check = function() {
+		if (this.count == this.ringsize) {
+			if (this.min = this.id) {
+				this.setState(LEADER);
+			} else {
+				this.setState(FOLLOWER);
+			}
+		}
+	}
 }
 // ****************************************************
 //  NODE

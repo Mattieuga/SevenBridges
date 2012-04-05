@@ -64,6 +64,7 @@
 			algoF.add(controlData, "Flood");
 			algoF.add(controlData, "CompleteElect");
 			algoF.add(controlData, "SpanningTreeConstruction");
+			algoF.add(controlData, "RingElect_Trivial");
 			algoF.open();	
 			
 			// Generate a graph
@@ -136,13 +137,15 @@
 					animator = new Animator(graph,controlData.Speed);
 					animator.completeElect();
 				} else {
-					var slider = $("span:contains('Density')");
+					$("#alert_title").html("Wait!");
+					$("#alert_text").html("First generate a <b>complete</b> graph by choosing Complete");
+					
+					var slider = $("span:contains('GraphType')");
 					var sliderLocation = slider.offset();
 					$("#alert").css("top",""+(sliderLocation.top-15)+"px");
 					$("#alert").css("left",""+(sliderLocation.left-240)+"px");
 								
 					$("#alert").show( "drop", {}, 100, callback);
-					//$("#alert-arrow").show( "drop", {}, 500, callback);
 				
 					function callback() {
 						setTimeout(function() {
@@ -166,15 +169,18 @@
 				animator.spanningTreeConstruction();
 			}
 
-			this.RingElection_Stages = function () {
+			this.RingElect_Trivial = function () {
 				if (graph.graphType == RING_GRAPH) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
 					animator = new Animator(graph,controlData.Speed);
-					animator.ringElectStages();
+					animator.ringElectAllTheWay();
 				} else {
 					var slider = $("span:contains('GraphType')");
 					var sliderLocation = slider.offset();
+					$("#alert_title").html("Wait!");
+					$("#alert_text").html("First generate a <b>ring</b> graph by choosing Ring");
+					
 					$("#alert").css("top",""+(sliderLocation.top-15)+"px");
 					$("#alert").css("left",""+(sliderLocation.left-240)+"px");
 								
@@ -276,8 +282,8 @@
 	
 	<div id="alert" class="border-r alert" style="top:0px;left:0px;">
 		<div id="alert-inner" class="alert-inner"  width="100px">	
-			<h1>Wait!</h1>	
-			<p>First generate a complete graph by using a density of 1.</p>
+			<h1 id="alert_title"></h1>	
+			<p id="alert_text"></p>
 		</div>
 		<div id="alert-arrow" class="alert-arrow"> 
 		</div>
