@@ -29,6 +29,7 @@
 	
 	<!-- Styling -->
 	<link rel=StyleSheet href="seven-bridges.css" title="stlyling">
+	<link rel="icon" href="images/sb_icon.png">	
 	
 	<!-- Build UI -->
 	<script type="text/javascript">
@@ -76,9 +77,10 @@
 			
 			var algoF = gui.addFolder('Algorithm');
 			algoF.add(controlData, "Flood");
-			algoF.add(controlData, "CompleteElect");
+			algoF.add(controlData, "CompleteElection");
 			algoF.add(controlData, "SpanningTreeConstruction");
-			algoF.add(controlData, "RingElect_Trivial");
+			algoF.add(controlData, "RingElection_Trivial");
+			algoF.add(controlData, "RingElection_Stages");
 			algoF.open();	
 			
 			// Generate a graph
@@ -144,7 +146,7 @@
 				animator.broadcast();
 			}
 
-			this.CompleteElect = function () {
+			this.CompleteElection = function () {
 	            if (graph.graphType == COMPLETE_GRAPH) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
@@ -183,7 +185,7 @@
 				animator.spanningTreeConstruction();
 			}
 
-			this.RingElect_Trivial = function () {
+			this.RingElection_Trivial = function () {
 				if (graph.graphType == RING_GRAPH) {
 					if (animator != null) animator.stopAnimation();
 					animator = null;
@@ -215,12 +217,44 @@
 					};
 				}	
 			}
+			
+			this.RingElection_Stages = function () {
+				if (graph.graphType == RING_GRAPH) {
+					if (animator != null) animator.stopAnimation();
+					animator = null;
+					animator = new Animator(graph,controlData.Speed);
+					animator.ringElectStages();
+				} else {
+					var slider = $("span:contains('GraphType')");
+					var sliderLocation = slider.offset();
+					$("#alert_title").html("Wait!");
+					$("#alert_text").html("First generate a <b>ring</b> graph by choosing Ring");
+					
+					$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+					$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+								
+					$("#alert").show( "drop", {}, 100, callback);
+					//$("#alert-arrow").show( "drop", {}, 500, callback);
+				
+					function callback() {
+						setTimeout(function() {
+							$( "#alert:visible" ).removeAttr( "style" ).fadeOut('fast',callback2);
+							$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+							$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+						}, 3000 );
+					};
+				
+					function callback2() {
+						$("#alert").css("top",""+(sliderLocation.top-15)+"px");
+						$("#alert").css("left",""+(sliderLocation.left-240)+"px");
+					};
+				}	
+			}
+			
 			this.Stop = function() {
 				animator.stopAnimation();
 			}
 		};
-	
-	
 	
 		function generateGraph() {
 			var canvas = document.getElementById('canvas');
@@ -308,7 +342,7 @@
 	<!-- Info pane by Jack Rugile -->
 	<div id="info">
 		<div id="info-inner">
-			<h1>SevenBridges<span class="help">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:replayTutorial()" target="_blank">Help</a></span></h1>
+			<div id="info-headerdiv"><img src="images/sb_white.png" height="25" align="absmiddle"/><label id="info-header">&nbsp;&nbsp;SevenBridges<span class="help">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:replayTutorial()" target="_blank">Help</a></span></label></div>
 			<p>Generate a graph using the Graph controls on the right, and simulate your favourite distributed algorithms from the Algorithm section. Click on a node to move it around. </p>	
 			<p>By <a href="http://about.me/MattieuGA" target="_blank">Mattieu Gamache-Asselin </a></p>			
 		</div>
@@ -321,11 +355,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-

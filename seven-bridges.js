@@ -130,13 +130,29 @@ Animator.prototype.sendMessageLoop = function(msg, destNode, edge, baseSpeed) {
 // ******************
 //    ALGORITHMS
 // ******************
+// Colors
+const ACCENT_LINK_COLOR = '#000000';
+const DEFAULT_LINK_COLOR = '#888888'
+const MESSAGE_COLOR = '#C93153';
+
+const SLEEPING_NODE_COLOR = '#EDEDED';
+
+const PASSIVE2_NODE_COLOR = '#AEE0F3';
+const PASSIVE_NODE_COLOR = '#AAAAAA';
+const ACTIVE_NODE_COLOR = '#F2E7C1';
+const INITIATOR_NODE_COLOR = '#6BBCE8';
+
+const FOLLOWER_NODE_COLOR = '#5A9BBF';//51BBE3';
+const LEADER_NODE_COLOR = '#F53D68';
+
+
 Animator.prototype.broadcast = function() {
 	var animator = this;
 	this.animating = true;
 	//this.graph.animating = true;
-	var SLEEPING = new State("sleeping","#AAAAAA");
-	var WAITING = new State("waiting","#FFFFFF");
-	var DONE = new State("done","#51BBE3");
+	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR);
+	var WAITING = new State("waiting",ACTIVE_NODE_COLOR);
+	var DONE = new State("done",FOLLOWER_NODE_COLOR);
 	this.graph.setAllNodeStates(SLEEPING);
 	
 	// Wakeup nodes
@@ -189,22 +205,11 @@ Animator.prototype.completeElect = function() {
 	var animator = this;
 	this.animating = true;
 	
-	// Colors
-	const CAPTURED_LINK_COLOR = '#000000';
-	const DEFAULT_LINK_COLOR = '#888888'
-	const MESSAGE_COLOR = '#C93153';
-	const CAPTURED_NODE_COLOR = '#AEE0F3';
-	const PASSIVE_NODE_COLOR = '#AAAAAA';
-	const SLEEPING_NODE_COLOR = '#FFFFFF';
-	const CANDIDATE_NODE_COLOR = '#F2E7C1';
-	const LEADER_NODE_COLOR = '#E3DBB9';
-	const FOLLOWER_NODE_COLOR = '#5A9BBF';
-	
 	// Node states
 	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
-	var CANDIDATE = new State("candidate",CANDIDATE_NODE_COLOR);
+	var CANDIDATE = new State("candidate",ACTIVE_NODE_COLOR);
 	var PASSIVE = new State("passvive",PASSIVE_NODE_COLOR);
-	var CAPTURED = new State("captured",CAPTURED_NODE_COLOR);
+	var CAPTURED = new State("captured",PASSIVE2_NODE_COLOR);
 	
 	var LEADER = new State("leader",LEADER_NODE_COLOR);
 	var FOLLOWER = new State("follower",FOLLOWER_NODE_COLOR);
@@ -250,7 +255,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				
 				this.stage = 1;
 				this.owner = message.sender;
@@ -275,7 +280,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
@@ -299,7 +304,7 @@ Animator.prototype.completeElect = function() {
 						if (this.adjEdges[i])
 							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
-					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+					this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2);
 					
 					this.owner = message.sender;
 					this.ownerstage = message.stage+1;
@@ -356,7 +361,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2); 
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 			else if (message.message == 'warning') // Message 'warning'
@@ -410,7 +415,7 @@ Animator.prototype.completeElect = function() {
 						if (this.adjEdges[i])
 							this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 					}
-					this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+					this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2); 
 					if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ message.sender.id);
 				}
 			}
@@ -439,7 +444,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2); 
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2); 
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
@@ -488,7 +493,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-				this.edgeForAdjacentNode(this.attack).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+				this.edgeForAdjacentNode(this.attack).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+") sent "+msg.message+" message to : Node "+ this.attack.id);
 			}
 			else if (message.message == 'warning') // Message 'warning'
@@ -516,7 +521,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+			    this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 			else if (message.message == 'accept') // JUST USED FOR UPDATING LINK COLORS
@@ -526,7 +531,7 @@ Animator.prototype.completeElect = function() {
 					if (this.adjEdges[i])
 						this.adjEdges[i].setColorAndWidth(DEFAULT_LINK_COLOR,1);
 				}
-			    this.edgeForAdjacentNode(this.owner).setColorAndWidth(CAPTURED_LINK_COLOR,2);
+			    this.edgeForAdjacentNode(this.owner).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				if (logging) console.log("Node " + this.id + " (" + this.state.name + ", "+this.stage+")");
 			}
 		}
@@ -537,24 +542,12 @@ Animator.prototype.spanningTreeConstruction = function() {
 	var animator = this;
 	this.animating = true;
 	
-	// Colors
-	const TREE_LINK_COLOR = '#000000';
-	const DEFAULT_LINK_COLOR = '#888888'
-	const MESSAGE_COLOR = '#C93153';
-
-	const SLEEPING_NODE_COLOR = '#FFFFFF';
-	const ACTIVE_NODE_COLOR = '#F2E7C1';
-	const INITIATOR_NODE_COLOR = '#6BBCE8';
-	const DONE_NODE_COLOR = '#F53D68';
-	const ROOT_NODE_COLOR = '#5A9BBF';
-	
-	
 	// Node states
 	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
 	var INITIATOR = new State("initiator",INITIATOR_NODE_COLOR);
 	var ACTIVE = new State("active",ACTIVE_NODE_COLOR);
-	var DONE = new State("done",DONE_NODE_COLOR);
-	var ROOT = new State("done",ROOT_NODE_COLOR);
+	var DONE = new State("done",FOLLOWER_NODE_COLOR);
+	var ROOT = new State("done",LEADER_NODE_COLOR);
 	
 	
 	this.graph.setAllNodeStates(SLEEPING);
@@ -604,7 +597,7 @@ Animator.prototype.spanningTreeConstruction = function() {
 				animator.sendMessage(msg, message.sender, this.edgeForAdjacentNode(message.sender));
 				if (logging) console.log("Node " + this.id + " (SLEEPING) sent "+msg.message+" message to : Node "+ message.sender.id);
 				
-				this.edgeForAdjacentNode(message.sender).setColorAndWidth(TREE_LINK_COLOR,2);
+				this.edgeForAdjacentNode(message.sender).setColorAndWidth(ACCENT_LINK_COLOR,2);
 				
 				if (this.counter == this.adjNodes.length) {
 					this.check();
@@ -725,16 +718,9 @@ Animator.prototype.ringElectAllTheWay = function() {
 	var animator = this;
 	this.animating = true;
 	
-	// Colors
-	const MESSAGE_COLOR = '#C93153';
-	const SLEEPING_NODE_COLOR = '#FFFFFF';
-	const CANDIDATE_NODE_COLOR = '#F2E7C1';
-	const LEADER_NODE_COLOR = '#E3DBB9';
-	const FOLLOWER_NODE_COLOR = '#5A9BBF';
-	
 	// Node states
 	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
-	var AWAKE = new State("awake",CANDIDATE_NODE_COLOR);
+	var AWAKE = new State("awake",ACTIVE_NODE_COLOR);
 	var LEADER = new State("leader",LEADER_NODE_COLOR);
 	var FOLLOWER = new State("follower",FOLLOWER_NODE_COLOR);
 	
@@ -836,6 +822,157 @@ Animator.prototype.ringElectAllTheWay = function() {
 		}
 	}
 }
+
+Animator.prototype.ringElectStages = function() { 
+	if (logging) console.log("STARTING STAGES");
+	var animator = this;
+	this.animating = true;
+	
+	// Node states
+	var SLEEPING = new State("sleeping",SLEEPING_NODE_COLOR)
+	var CANDIDATE = new State("candidate",ACTIVE_NODE_COLOR);
+	var PASSIVE = new State("passvive",PASSIVE_NODE_COLOR);
+	var WAITING = new State("captured",PASSIVE2_NODE_COLOR);
+	
+	var LEADER = new State("leader",LEADER_NODE_COLOR);
+	var FOLLOWER = new State("follower",FOLLOWER_NODE_COLOR);
+	
+	this.graph.setAllNodeStates(SLEEPING);
+	this.graph.setAllEdgesColorAndWidth('#000000',1);
+	
+	// Wakeup nodes
+	for (var i = 0; i < this.graph.nodes.length; i++) {
+		var node = this.graph.nodes[i];
+		var sleepTime = Math.floor(Math.random()*3) * (Math.floor(Math.random()*500)+500);		
+		var fnc = function(aNode){ return function(){aNode.handleMessage(new Message(0,0,'wakeup',0));}}(node)
+		setTimeout(fnc, sleepTime);
+	}
+	
+	Node.prototype.handleMessage = function(message) 
+	{
+		if (!animator.animating) {return};
+		
+		// First check if message port is open	
+		var portNum = this.edgeIndexForAdjacentNode(message.sender);
+		if (this.state == SLEEPING) { // State SLEEPING
+			if (message.message == 'wakeup') // Message 'wakeup'
+			{
+				this.stages = 1;
+				this.count = 0;
+				this.min = this.id;
+				this.ports = [];
+				this.ports[0] = true;
+				this.ports[1] = true;
+				this.queue0 = [];
+				this.queue1 = [];
+				
+				// Send election to both neighbours
+				for (var i = 0; i < 2; i++) {
+					var msg = new Message(this.x, this.y, "elect("+this.id+")",MESSAGE_COLOR);
+					msg.stage = this.stage;
+					msg.id = this.id;
+					msg.sender = this;
+					animator.sendMessage(msg, this.adjNodes[i], this.adjEdges[i]);
+				}
+				
+				this.setState(CANDIDATE);				
+			} else if (message.message.substring(0,5) == "elect") {
+				this.stages = 1;
+				this.count = 0;
+				this.min = this.id;
+				this.ports = [];
+				this.ports[0] = true;
+				this.ports[1] = true;
+				this.queue0 = [];
+				this.queue1 = [];
+				
+				// Send election to both neighbours
+				for (var i = 0; i < 2; i++) {
+					var msg = new Message(this.x, this.y, "elect("+this.id+")",MESSAGE_COLOR);
+					msg.stage = this.stage;
+					msg.id = this.id;
+					msg.sender = this;
+					animator.sendMessage(msg, this.adjNodes[i], this.adjEdges[i]);
+				}
+				
+				if (message.id < this.min) this.min = message.id;
+				
+				// Close port for sender
+				this.ports[portNum] = false;
+				
+				this.setState(WAITING);				
+			}
+		} else if (this.ports[portNum] == false) {
+			var portQueue;
+			if (portNum == 0)
+				portQueue = this.queue0;
+			else
+				portQueue = this.queue1;
+			
+			portQueue.push(message);
+		// If ports are open then handle the message
+		} else if (this.state == CANDIDATE) { // State SLEEPING
+			if (message.message.substring(0,5) == "elect") {
+				if (message.id != this.id) {
+					if (message.id < this.min) this.min = message.id;
+					
+					this.ports[portNum] = false;
+					
+					this.setState(WAITING);
+				} else {
+					// Send notification to both neighbours
+					for (var i = 0; i < 2; i++) {
+						var msg = new Message(this.x, this.y, "leader("+this.id+")",MESSAGE_COLOR);
+						msg.stage = this.stage;
+						msg.id = this.id;
+						msg.sender = this;
+						animator.sendMessage(msg, this.adjNodes[i], this.adjEdges[i]);
+					}
+					this.setState(LEADER);
+				}		
+			}
+		} else if (this.state == WAITING) {
+			if (message.message.substring(0,5) == "elect") {
+				
+				var otherPort = (portNum == 0) ? 1 : 0;
+				this.openPort(otherPort);
+				
+				this.stage++;
+				if (message.id < this.min) this.min = message.id;
+				if (this.min == this.id) {
+					// Send election to both neighbours
+					for (var i = 0; i < 2; i++) {
+						var msg = new Message(this.x, this.y, "elect("+this.id+")",MESSAGE_COLOR);
+						msg.stage = this.stage;
+						msg.id = this.id;
+						msg.sender = this;
+						animator.sendMessage(msg, this.adjNodes[i], this.adjEdges[i]);
+					}
+					this.setState(CANDIDATE);
+				} else {
+					this.setState(PASSIVE);
+				}
+			}
+		} else if (this.state == PASSIVE) {
+			if (message.message.substring(0,6) == "leader") {
+				this.setState(FOLLOWER);
+			}
+			
+			// Also, in all cases, forward message
+			var otherNeighbour = this.edgeIndexForAdjacentNode(message.sender) == 0 ? 1 : 0;
+			animator.sendMessage(message, this.adjNodes[otherNeighbour], this.adjEdges[otherNeighbour]);
+		}
+	}
+	
+	Node.prototype.openPort = function(portNum) {
+		this.ports[portNum] = true;
+		var portQueue = (portNum == 0) ? this.queue0 : this.queue1;
+		for (var i = 0; i < portQueue.length; i++) {
+			this.handleMessage(portQueue[i]);
+		}
+	}
+}
+
 // ****************************************************
 //  NODE
 // ****************************************************
@@ -899,7 +1036,7 @@ Node.prototype.setState = function(newState) {
 	this.state = newState;
 	this.graph.valid = false;
 }
-
+/*
 Node.prototype.edgeForAdjacentNode = function(node) {
 	var index = -1;
 	for (var i = 0; i < this.adjNodes.length; i++) {
@@ -913,6 +1050,27 @@ Node.prototype.edgeForAdjacentNode = function(node) {
 	else
 		return null;
 }
+*/
+
+Node.prototype.edgeForAdjacentNode = function(node) {
+	var index = this.edgeIndexForAdjacentNode(node);
+	
+	if (index >= 0)
+		return this.adjEdges[index];
+	else
+		return null;
+}
+
+Node.prototype.edgeIndexForAdjacentNode = function(node) {
+	var index = -1;
+	for (var i = 0; i < this.adjNodes.length; i++) {
+		if (this.adjNodes[i] == node) {
+			index = i;
+		}
+	}
+	return index;
+}
+
 
 // ****************************************************
 //  EDGE
